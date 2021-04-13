@@ -1,0 +1,24 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"workbench.colorCustomizations": {
+			"editor.background": "#000000"
+		},
+		"files.exclude": {
+			"dist/**": true,
+			"out/**": true,
+			"perl5/**": true,
+			"tmp/**": true,
+			"tool/**": true,
+			"var/**": true,
+			"vue/public/**": true,
+			"www/version/**": true
+		},
+		"git.ignoreLimitWarning": true,
+		"workbench.editor.closeEmptyGroups": false
+	}
+}
