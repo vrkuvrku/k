@@ -1,11 +1,17 @@
+// @ts-check
+
 import './style';
+// @ts-ignore
 import { useRef, useEffect, useState } from 'preact/hooks'
 
 const SIZE = 4
 
-let start_xPos, start_yPos, start_time
+/** @type {number} */
+let swipeX
+/** @type {number} */
+let swipeY
+
 const SWIPE_MIN = 20
-const SWIPE_TIME = 20
 
 /*
 function Canvas(props) {
@@ -55,7 +61,7 @@ function Canvas(props) {
 */
 
 function Board(p) {
-	const onKeyPress = (e) => {
+	const onKeyPress = (/** @type {{ code: any; }} */ e) => {
 		console.log("keyPress", e.code)
 	}
 	return (<table cellPadding="0" cellSpacing="0"
@@ -78,6 +84,7 @@ function Tile(p) {
 		const height = window.innerHeight
 		setSide(Math.floor((width < height ? width : height) / SIZE))
 	}, [])
+	/** @type {number} */
 	const n = p.board[SIZE * p.y + p.x]
 	return <div className="tile" style={{
 		width: side + 'px', height: side + 'px',
@@ -85,6 +92,7 @@ function Tile(p) {
 		{n && <Number side={side} n={n} />}
 	</div>
 }
+
 function Number({ n, side }) {
 	const colors = [
 		'#D35400',
@@ -117,11 +125,11 @@ function Number({ n, side }) {
 function Game() {
 	const [board, _setBoard] = useState([null, null, null, null, null, null, 1])
 	const boardRef = useRef(board);
-	const setBoard = (board) => {
+	const setBoard = (/** @type {number[]} */ board) => {
 		boardRef.current = board;
 		_setBoard(board);
 	};
-	const debug = (copy) => {
+	const debug = (/** @type {number[]} */ copy) => {
 		const ary = []
 		for (let y = 0; y < SIZE; y++) {
 			let row = []
@@ -133,6 +141,15 @@ function Game() {
 		}
 		console.log("+=========+\n" + ary.join("\n") + "\n+---------+")
 	}
+
+	/**
+ * @param {[number]} copy
+ * @param {number} fromX
+ * @param {number} fromY
+ * @param {number} dirX
+ * @param {number} dirY
+ * @param {number} steps
+ */
 	const moveItem = (copy, fromX, fromY, dirX, dirY, steps) => {
 		let n = copy[SIZE * fromY + fromX]
 		let changed = false
@@ -163,6 +180,12 @@ function Game() {
 			//debug(copy)
 		}
 	}
+	/**
+	 * 
+	 * @param {[number]} copy 
+	 * @param {number} dirX 
+	 * @param {number} dirY 
+	 */
 	const moveItems = (copy, dirX, dirY) => {
 		for (let a = 0; a < SIZE; a++) // independent
 			for (let b = 0; b < SIZE; b++) { // stacking
@@ -188,7 +211,7 @@ function Game() {
 				if (n) moveItem(copy, x, y, dirX, dirY, b)
 			}
 	}
-	const placeNew = (copy) => {
+	const placeNew = (/** @type {number[]} */ copy) => {
 		let empty = []
 		for (let y = 0; y < SIZE; y++) {
 			for (let x = 0; x < SIZE; x++) {
@@ -204,34 +227,32 @@ function Game() {
 		}
 		return copy
 	}
-	const step = (dirX, dirY) => {
+	const step = (/** @type {number} */ dirX, /** @type {number} */ dirY) => {
 		const copy = [...boardRef.current]
+		// @ts-ignore
 		moveItems(copy, dirX, dirY)
 		placeNew(copy)
 		setBoard([...copy])
 	}
 	useEffect(() => {
 		window.addEventListener('touchstart', function (event) {
-			start_xPos = event.touches[0].pageX;
-			start_yPos = event.touches[0].pageY;
-			start_time = new Date();
+			swipeX = event.touches[0].pageX;
+			swipeY = event.touches[0].pageY;
 		});
 		window.addEventListener('touchend', function (event) {
-			var end_xPos = event.changedTouches[0].pageX;
-			var end_yPos = event.changedTouches[0].pageY;
-			var end_time = new Date();
-			let move_x = end_xPos - start_xPos;
-			let move_y = end_yPos - start_yPos;
-			let elapsed_time = end_time - start_time;
-			if (Math.abs(move_x) > SWIPE_MIN && Math.abs(move_y) > SWIPE_MIN) return
-			if (move_x > SWIPE_MIN) step(1, 0)
-			else if (move_x < -SWIPE_MIN) step(-1, 0)
-			else if (move_y > SWIPE_MIN) step(0, 1)
-			else if (move_y < -SWIPE_MIN) step(0, -1)
+			var movedX = event.changedTouches[0].pageX - swipeX
+			var movedY = event.changedTouches[0].pageY - swipeY
+			if (Math.abs(movedX) > Math.abs(movedY)) {
+				if (movedX > SWIPE_MIN) step(1, 0)
+				else if (movedX < -SWIPE_MIN) step(-1, 0)
+			} else {
+				if (movedY > SWIPE_MIN) step(0, 1)
+				else if (movedY < -SWIPE_MIN) step(0, -1)
+			}
 		});
 		window.addEventListener('keyup', function (event) {
 			//console.clear()
-			console.log({ keyCode: event.keyCode, code: event.code })
+			console.log({ code: event.code })
 			switch (event.code) {
 				case 'ArrowRight': step(1, 0); break;
 				case 'ArrowLeft': step(-1, 0); break;
